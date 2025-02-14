@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth import login as auth_login, authenticate, logout as auth_logout
+from django.contrib.auth.forms import SetPasswordForm
 from .forms import CustomUserCreationForm, CustomErrorList
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
@@ -44,6 +45,26 @@ def login(request):
             # successful authentication
             auth_login(request, user)
             return redirect('home.index')
+
+def reset_password(request):
+    template_data = {}
+    template_data['title'] = 'Reset Password'
+    if request.method == 'GET':
+        return render(request, 'accounts/reset_password.html', {'template_data': template_data})
+    elif request.method == 'POST':
+        username = request.POST['username']
+        if User.objects.filter(username=username).exists() and request.POST['password'] == request.POST['password2']:
+            user = User.objects.get(username=username)
+            user.set_password(request.POST['password'])
+            user.save()
+            return redirect('accounts.login')
+        elif request.POST['password'] == request.POST['password2']:
+            template_data['error'] = "The username doesn't exist."
+            return render(request, 'accounts/reset_password.html', {'template_data': template_data})
+        else:
+            template_data['error'] = "The passwords don't match."
+            return render(request, 'accounts/reset_password.html', {'template_data': template_data})
+
 
 @login_required
 def logout(request):
